@@ -28,35 +28,44 @@ void initPins(void)
 int16_t readSample(){
    uint16_t sample1 = 0;
    uint16_t sample2 = 0;
-   
-   // charge C/H internal capacitance
-   SET_HIGH(1);
-   MUX(1);
-   _delay_us(10);
    CLEAR_MUX();
-   
-   // discharge external capacitance
-   SET_LOW(0);
-   SET_INPUT(0);
-   _delay_ms(5); // could be optimized
+      
+   // charge C/H internal capacitance
+   SET_OUTPUT(1);
+   SET_HIGH(1);
+   ADMUX = 0x11; 
+   _delay_us(10);
 
+   // discharge external capacitance
+   SET_OUTPUT(0);
+   SET_LOW(0);
+   _delay_ms(10); // could be optimized
+
+   //Connect the internal capacitor with the external one
+   ADMUX = 0x10; 
+   _delay_us(10);
+   
    // get first sample
+   SET_INPUT(0);
    sample1 = getConvData();
 
    // discharge C/H internal capacitance
+   SET_OUTPUT(1);
    SET_LOW(1);
-   MUX(1);
-   _delay_us(20);
+   ADMUX = 0x11;
+   _delay_us(10);
 
    // charge external capacitance
    SET_OUTPUT(0);
    SET_HIGH(0);
-   ANODE_LOW();
-   for(volatile uint8_t i = 0; i < 3 ; i++);
-   CLEAR_MUX();
-   _delay_ms(5); // could be optimized
+   _delay_us(10);
+
+   //Connect the internal capacitor with the external one
+   ADMUX = 0x10;
+   _delay_ms(10); // could be optimized
    
    // get second sample
+   SET_INPUT(0);
    sample2 = getConvData();
    
    return (sample2 - sample1);
@@ -64,10 +73,11 @@ int16_t readSample(){
 
 int main(void)
 {
+  init();
   uint16_t result;
   initADC();
   initPins();
-  Serial.begin (9600);
+  Serial.begin (2000000);
 
   while(1)
   {
